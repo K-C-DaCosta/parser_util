@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use super::XMLErrorKind; 
 
 #[derive(Copy, Clone)]
-pub enum XMLTokenKind {
+pub enum XmlTokenKind {
     //a token is either 'open',close,openclose, or inner;
     Open,
     Close,
@@ -16,13 +16,13 @@ pub enum XMLTokenKind {
 }
 
 pub struct XmlToken {
-    pub token_kind: XMLTokenKind,
+    pub token_kind: XmlTokenKind,
     pub content: String,
     pub attribs: HashMap<String, String>,
 }
 
 impl XmlToken {
-    pub fn new(token_kind: XMLTokenKind, content: String) -> XmlToken {
+    pub fn new(token_kind: XmlTokenKind, content: String) -> XmlToken {
         XmlToken {
             token_kind,
             content,
@@ -33,7 +33,7 @@ impl XmlToken {
 impl Default for XmlToken {
     fn default() -> XmlToken {
         XmlToken {
-            token_kind: XMLTokenKind::Unknown,
+            token_kind: XmlTokenKind::Unknown,
             content: String::new(),
             attribs: HashMap::new(),
         }
@@ -44,18 +44,18 @@ impl Default for XmlToken {
 /// I repeat, this code  cannot parse the entire XML grammar. The parser was intented to parse xml that stores raw data.\
 /// All the `<!DOCTYPE .. >`, `<!ENTITY ..>` stuff has been cut out of the grammar in this parser \
 /// Comments should still work though.
-pub struct Lexer {
+pub struct XmlLexer {
     pub tokens: Vec<Option<XmlToken>>,
 }
 
-impl Lexer {
-    pub fn new() -> Lexer {
-        Lexer { tokens: Vec::new() }
+impl XmlLexer {
+    pub fn new() -> XmlLexer {
+        XmlLexer { tokens: Vec::new() }
     }
 
     ///tokenizes raw  xml text with FSM logic
     pub fn lex(&mut self, src: &str) -> Result<(), XMLErrorKind> {
-        use XMLTokenKind::*;
+        use XmlTokenKind::*;
         let mut state = Unknown;
         let mut accum = String::new();
         let mut current_key = String::new();
@@ -78,7 +78,7 @@ impl Lexer {
                         self.push_token(OpenClose, &mut accum);
                     } else if let (' ', Some(lookahead)) = (c, char_iter.peek()) {
                         if lookahead.is_alphabetic() {
-                            state = XMLTokenKind::OpenAttribOpen;
+                            state = XmlTokenKind::OpenAttribOpen;
                             //label token as "open" by default
                             self.push_token(Open, &mut accum);
                         }
@@ -126,7 +126,7 @@ impl Lexer {
                             .insert(current_key.clone(), accum.clone());
                         accum.clear();
 
-                        state = XMLTokenKind::OpenAttribOpen;
+                        state = XmlTokenKind::OpenAttribOpen;
                     } else {
                         accum.push(c);
                     }
@@ -171,7 +171,7 @@ impl Lexer {
         Ok(())
     }
 
-    fn push_token(&mut self, token_kind: XMLTokenKind, accum: &mut String) {
+    fn push_token(&mut self, token_kind: XmlTokenKind, accum: &mut String) {
         if accum.len() == 0 || accum.trim().len() == 0 {
             accum.clear();
             return;
@@ -186,28 +186,28 @@ impl Lexer {
         for tok in self.tokens.iter() {
             match &tok {
                 Some(XmlToken {
-                    token_kind: XMLTokenKind::Open,
+                    token_kind: XmlTokenKind::Open,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Open Content=\'{}\'", txt);
                 }
                 Some(XmlToken {
-                    token_kind: XMLTokenKind::Inner,
+                    token_kind: XmlTokenKind::Inner,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Inner Content=\'{}\'", txt.trim());
                 }
                 Some(XmlToken {
-                    token_kind: XMLTokenKind::Close,
+                    token_kind: XmlTokenKind::Close,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Close Content=\'{}\'", txt);
                 }
                 Some(XmlToken {
-                    token_kind: XMLTokenKind::OpenClose,
+                    token_kind: XmlTokenKind::OpenClose,
                     content: txt,
                     ..
                 }) => {

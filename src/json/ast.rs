@@ -19,7 +19,7 @@ impl From<LexerError> for ParseError {
 }
 
 pub struct JsonAst {
-    lexer: JsLexer,
+    lexer: JsonLexer,
     ast: NaryTree<JsToken>,
 }
 
@@ -27,7 +27,7 @@ impl JsonAst {
     pub fn new() -> Self {
         Self {
             ast: NaryTree::new(),
-            lexer: JsLexer::new(),
+            lexer: JsonLexer::new(),
         }
     }
     /// # Description

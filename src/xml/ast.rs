@@ -1,5 +1,5 @@
 use sandboxed_collections::naryforest::*;
-use super::lexer::{Lexer, XmlToken, XMLTokenKind};
+use super::lexer::{XmlLexer, XmlToken, XmlTokenKind};
 use super::XMLErrorKind;
 
 /// Can correctly parse  only  a subset of XML grammar *only*.\
@@ -7,21 +7,21 @@ use super::XMLErrorKind;
 /// All the `<!DOCTYPE .. >`, `<!ENTITY ..>` stuff has been cut out of the grammar in this parser \
 /// Comments should still work though.
 pub struct XmlAst {
-    pub lexer: Lexer,
+    pub lexer: XmlLexer,
     pub ast: NaryForest<XmlToken>,
 }
 
 impl XmlAst {
     pub fn new() -> XmlAst {
         XmlAst {
-            lexer: Lexer::new(),
+            lexer: XmlLexer::new(),
             ast: NaryForest::new(),
         }
     }
 
     ///Builds AST with an explicit stack
     pub fn parse(&mut self, src: &String) -> Result<(), XMLErrorKind> {
-        use XMLTokenKind::*;
+        use XmlTokenKind::*;
 
         //lex raw text first
         self.lexer.lex(src.as_str())?;
@@ -118,7 +118,7 @@ impl XmlAst {
         }
         match self.ast[node_ptr].data.as_ref() {
             Some(token) => match token.token_kind {
-                XMLTokenKind::Open => {
+                XmlTokenKind::Open => {
                     xml_stream.push_str(format!("<{}", token.content).as_str());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key, val).as_str());
@@ -129,10 +129,10 @@ impl XmlAst {
                     }
                     xml_stream.push_str(format!("</{}>", token.content).as_str());
                 }
-                XMLTokenKind::Inner => {
+                XmlTokenKind::Inner => {
                     xml_stream.push_str(format!("{}", token.content).as_str());
                 }
-                XMLTokenKind::OpenClose => {
+                XmlTokenKind::OpenClose => {
                     xml_stream.push_str(format!("<{}", token.content).as_str());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key, val).as_str());
@@ -162,7 +162,7 @@ impl XmlAst {
         }
         match self.ast[node_ptr].data.as_ref() {
             Some(token) => match token.token_kind {
-                XMLTokenKind::Open => {
+                XmlTokenKind::Open => {
                     xml_stream.push_str(format!("<{}", token.content).as_str().trim());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key.trim(), val.trim()).as_str());
@@ -173,10 +173,10 @@ impl XmlAst {
                     }
                     xml_stream.push_str(format!("</{}>", token.content.trim()).as_str());
                 }
-                XMLTokenKind::Inner => {
+                XmlTokenKind::Inner => {
                     xml_stream.push_str(format!("{}", token.content.trim()).as_str());
                 }
-                XMLTokenKind::OpenClose => {
+                XmlTokenKind::OpenClose => {
                     xml_stream.push_str(format!("<{} ", token.content.trim()).as_str());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key.trim(), val.trim()).as_str());

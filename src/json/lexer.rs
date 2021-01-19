@@ -50,12 +50,12 @@ pub enum LexerError {
     InvalidNumber(String),
 }
 
-pub struct JsLexer {
+pub struct JsonLexer {
     token_stream: Vec<JsToken>,
     state: LexerState,
 }
 
-impl JsLexer {
+impl JsonLexer {
     pub fn new() -> Self {
         Self {
             token_stream: Vec::new(),
