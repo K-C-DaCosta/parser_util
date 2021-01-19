@@ -2,7 +2,7 @@ use parser_util::json::{ast::*,lexer::*};
 use std::fs;
 
 fn main() {
-    let mut json_ast = JsAst::new();
+    let mut json_ast = JsonAst::new();
     let raw_text = fs::read_to_string("./json_examples/ex1.json").unwrap();
     if let Err(_) = json_ast.parse(&raw_text) {
         println!("Parse Failed!");

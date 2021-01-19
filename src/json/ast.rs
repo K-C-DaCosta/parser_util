@@ -18,12 +18,12 @@ impl From<LexerError> for ParseError {
     }
 }
 
-pub struct JsAst {
+pub struct JsonAst {
     lexer: JsLexer,
     ast: NaryTree<JsToken>,
 }
 
-impl JsAst {
+impl JsonAst {
     pub fn new() -> Self {
         Self {
             ast: NaryTree::new(),
