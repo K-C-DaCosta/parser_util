@@ -15,24 +15,24 @@ pub enum XMLTokenKind {
     Comment,
 }
 
-pub struct XMLToken {
+pub struct XmlToken {
     pub token_kind: XMLTokenKind,
     pub content: String,
     pub attribs: HashMap<String, String>,
 }
 
-impl XMLToken {
-    pub fn new(token_kind: XMLTokenKind, content: String) -> XMLToken {
-        XMLToken {
+impl XmlToken {
+    pub fn new(token_kind: XMLTokenKind, content: String) -> XmlToken {
+        XmlToken {
             token_kind,
             content,
             attribs: HashMap::new(),
         }
     }
 }
-impl Default for XMLToken {
-    fn default() -> XMLToken {
-        XMLToken {
+impl Default for XmlToken {
+    fn default() -> XmlToken {
+        XmlToken {
             token_kind: XMLTokenKind::Unknown,
             content: String::new(),
             attribs: HashMap::new(),
@@ -45,7 +45,7 @@ impl Default for XMLToken {
 /// All the `<!DOCTYPE .. >`, `<!ENTITY ..>` stuff has been cut out of the grammar in this parser \
 /// Comments should still work though.
 pub struct Lexer {
-    pub tokens: Vec<Option<XMLToken>>,
+    pub tokens: Vec<Option<XmlToken>>,
 }
 
 impl Lexer {
@@ -177,7 +177,7 @@ impl Lexer {
             return;
         }
 
-        let token = XMLToken::new(token_kind, accum.clone());
+        let token = XmlToken::new(token_kind, accum.clone());
         self.tokens.push(Some(token));
         accum.clear();
     }
@@ -185,28 +185,28 @@ impl Lexer {
     pub fn print_tokens(&self) {
         for tok in self.tokens.iter() {
             match &tok {
-                Some(XMLToken {
+                Some(XmlToken {
                     token_kind: XMLTokenKind::Open,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Open Content=\'{}\'", txt);
                 }
-                Some(XMLToken {
+                Some(XmlToken {
                     token_kind: XMLTokenKind::Inner,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Inner Content=\'{}\'", txt.trim());
                 }
-                Some(XMLToken {
+                Some(XmlToken {
                     token_kind: XMLTokenKind::Close,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Close Content=\'{}\'", txt);
                 }
-                Some(XMLToken {
+                Some(XmlToken {
                     token_kind: XMLTokenKind::OpenClose,
                     content: txt,
                     ..

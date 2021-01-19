@@ -1,19 +1,19 @@
 use sandboxed_collections::naryforest::*;
-use super::lexer::{Lexer, XMLToken, XMLTokenKind};
+use super::lexer::{Lexer, XmlToken, XMLTokenKind};
 use super::XMLErrorKind;
 
 /// Can correctly parse  only  a subset of XML grammar *only*.\
 /// I repeat, this code  cannot parse the entire XML grammar. The parser was intented to parse xml that stores raw data.\
 /// All the `<!DOCTYPE .. >`, `<!ENTITY ..>` stuff has been cut out of the grammar in this parser \
 /// Comments should still work though.
-pub struct XMLParser {
+pub struct XmlAst {
     pub lexer: Lexer,
-    pub ast: NaryForest<XMLToken>,
+    pub ast: NaryForest<XmlToken>,
 }
 
-impl XMLParser {
-    pub fn new() -> XMLParser {
-        XMLParser {
+impl XmlAst {
+    pub fn new() -> XmlAst {
+        XmlAst {
             lexer: Lexer::new(),
             ast: NaryForest::new(),
         }
@@ -212,7 +212,7 @@ impl XMLParser {
     pub fn get_child_tokens(
         &self,
         node_ptr: u32,
-    ) -> impl Iterator<Item = (usize, Option<&XMLToken>)> {
+    ) -> impl Iterator<Item = (usize, Option<&XmlToken>)> {
         //without get_child_tokens(...) I would have to do something like this EVERY time i wanted to iterate through
         //the children of a particular node
         self.ast[node_ptr]
