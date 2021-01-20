@@ -22,8 +22,6 @@ impl XmlParser {
 
     ///Builds AST with an explicit stack
     pub fn parse(&mut self, src: &String) -> Result<(), XMLErrorKind> {
-        use XmlTokenKind::*;
-
         //lex raw text first
         self.lexer.lex(src.as_str())?;
         // self.print_tokens();
@@ -31,36 +29,47 @@ impl XmlParser {
         //init ast_stack with the root_node
         let root_token = self.lexer.tokens[0].take().unwrap();
         let root_node_ptr = self.ast.allocate(root_token);
-        let mut ast_stack = vec![root_node_ptr];
+        let mut parent_stack = vec![root_node_ptr];
+
+        //if theres only one empty-tag, the xml is valid, clear parent_stack
+        let root_node_ref = self.ast[root_node_ptr].data.as_ref().unwrap();
+        if self.lexer.tokens.len() == 1 && root_node_ref.token_kind.is_emptytag() {
+            parent_stack.clear();
+        }
 
         for k in 1..self.lexer.tokens.len() {
-            if let Some(&parent_ptr) = ast_stack.last() {
+            if let Some(&parent_ptr) = parent_stack.last() {
                 let current_token = self.lexer.tokens[k].take().unwrap();
-                if let Open = current_token.token_kind {
-                    let node_ptr = self.ast.allocate(current_token);
-                    self.ast.add_child(parent_ptr, node_ptr);
-                    ast_stack.push(node_ptr);
-                } else if let Close = current_token.token_kind {
-                    let open_tag_name = &self.ast[parent_ptr].data.as_ref().unwrap().content;
-                    let close_tag_name = &current_token.content;
-                    if open_tag_name != close_tag_name {
-                        return Err(XMLErrorKind::ParserErr("Tags mismatch"));
+                match current_token.token_kind {
+                    XmlTokenKind::OpenTag => {
+                        let node_ptr = self.ast.allocate(current_token);
+                        self.ast.add_child(parent_ptr, node_ptr);
+                        parent_stack.push(node_ptr);
                     }
-                    if let None = ast_stack.pop() {
-                        return Err(XMLErrorKind::ParserErr("Close Tag without Opening Tag"));
+                    XmlTokenKind::CloseTag => {
+                        let open_tag_name = &self.ast[parent_ptr].data.as_ref().unwrap().content;
+                        let close_tag_name = &current_token.content;
+                        if open_tag_name != close_tag_name {
+                            return Err(XMLErrorKind::ParserErr("Tags mismatch"));
+                        }
+                        if let None = parent_stack.pop() {
+                            return Err(XMLErrorKind::ParserErr("Close Tag without Opening Tag"));
+                        }
                     }
-                } else if let Inner = current_token.token_kind {
-                    let node_ptr = self.ast.allocate(current_token);
-                    self.ast.add_child(parent_ptr, node_ptr);
-                } else if let OpenClose = current_token.token_kind {
-                    let node_ptr = self.ast.allocate(current_token);
-                    self.ast.add_child(parent_ptr, node_ptr);
+                    XmlTokenKind::ContentTag => {
+                        let node_ptr = self.ast.allocate(current_token);
+                        self.ast.add_child(parent_ptr, node_ptr);
+                    }
+                    XmlTokenKind::EmptyTag => {
+                        let node_ptr = self.ast.allocate(current_token);
+                        self.ast.add_child(parent_ptr, node_ptr);
+                    }
+                    _ => return Err(XMLErrorKind::ParserErr("unexpected token in token stream")),
                 }
-            } else {
-                return Err(XMLErrorKind::ParserErr("Extra Tag"));
             }
         }
-        if ast_stack.is_empty() == false {
+
+        if parent_stack.is_empty() == false {
             return Err(XMLErrorKind::ParserErr(
                 "Opening tags do not match close tags",
             ));
@@ -104,7 +113,7 @@ impl XmlAst {
             return NULL;
         }
         let cloned_other_node_ptr = self.clone_node(other_tree, other_node);
-        
+
         if other_parent != NULL {
             self.ast.add_child(other_parent, cloned_other_node_ptr);
         }
@@ -122,9 +131,8 @@ impl XmlAst {
     /// The address to the cloned node(cloned node is now in `Self`)
     fn clone_node(&mut self, other_tree: &XmlAst, other_node: Pointer) -> Pointer {
         let other_node = &other_tree[other_node];
-        let duplicated_token = other_node.data.as_ref().expect("as_ref fucked up").clone(); 
-        self.ast
-            .allocate(duplicated_token)
+        let duplicated_token = other_node.data.as_ref().expect("as_ref fucked up").clone();
+        self.ast.allocate(duplicated_token)
     }
 
     pub fn print_tree(&self) {
@@ -174,7 +182,7 @@ impl XmlAst {
         }
         match self.ast[node_ptr].data.as_ref() {
             Some(token) => match token.token_kind {
-                XmlTokenKind::Open => {
+                XmlTokenKind::OpenTag => {
                     xml_stream.push_str(format!("<{}", token.content).as_str());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key, val).as_str());
@@ -185,10 +193,10 @@ impl XmlAst {
                     }
                     xml_stream.push_str(format!("</{}>", token.content).as_str());
                 }
-                XmlTokenKind::Inner => {
+                XmlTokenKind::ContentTag => {
                     xml_stream.push_str(format!("{}", token.content).as_str());
                 }
-                XmlTokenKind::OpenClose => {
+                XmlTokenKind::EmptyTag => {
                     xml_stream.push_str(format!("<{}", token.content).as_str());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key, val).as_str());
@@ -218,7 +226,7 @@ impl XmlAst {
         }
         match self.ast[node_ptr].data.as_ref() {
             Some(token) => match token.token_kind {
-                XmlTokenKind::Open => {
+                XmlTokenKind::OpenTag => {
                     xml_stream.push_str(format!("<{}", token.content).as_str().trim());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key.trim(), val.trim()).as_str());
@@ -229,10 +237,10 @@ impl XmlAst {
                     }
                     xml_stream.push_str(format!("</{}>", token.content.trim()).as_str());
                 }
-                XmlTokenKind::Inner => {
+                XmlTokenKind::ContentTag => {
                     xml_stream.push_str(format!("{}", token.content.trim()).as_str());
                 }
-                XmlTokenKind::OpenClose => {
+                XmlTokenKind::EmptyTag => {
                     xml_stream.push_str(format!("<{} ", token.content.trim()).as_str());
                     for (key, val) in token.attribs.iter() {
                         xml_stream.push_str(format!(" {}=\"{}\"", key.trim(), val.trim()).as_str());

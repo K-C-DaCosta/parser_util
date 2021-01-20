@@ -7,6 +7,8 @@ use parser_util::{
 use std::{fs, path::Path};
 
 fn main() {
+
+    let asd_template = load_and_parse("../blackbot/resources/xml/thread_thumbnail.xml");
     xml_clone_test()
 }
 
@@ -32,6 +34,7 @@ pub fn json_test() {
 pub fn xml_clone_test() {
     let mut thread_template = load_and_parse("../blackbot/resources/xml/thread.xml");
     let post_template = load_and_parse("../blackbot/resources/xml/thread_post.xml");
+
     let post_ptr = thread_template.clone_tree(&post_template);
 
     let opt_thread_body_ptr = thread_template.ast.search(0, |node| {

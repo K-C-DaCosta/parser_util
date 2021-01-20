@@ -1,18 +1,37 @@
+use super::XMLErrorKind;
 use std::collections::HashMap;
-use super::XMLErrorKind; 
 
+/// # Description
+/// A token is either:
+/// - `OpenTag`
+/// - `CloseTag`
+/// - `EmptyTag`
+/// - `ContentTag` - raw text
+/// # Comments
+/// The rest of the `TokenKinds` are for states in the lexer
 #[derive(Copy, Clone)]
 pub enum XmlTokenKind {
-    //a token is either 'open',close,openclose, or inner;
-    Open,
-    Close,
-    OpenClose,
-    Inner,
-    //aux token types(these act like states)
-    Unknown,
-    OpenAttribOpen,
-    OpenAttribClose,
-    Comment,
+    ///This token is for  tages like: `<foo>`
+    OpenTag,
+    ///This token is for  tages like: `</foo>`
+    CloseTag,
+    ///This token is for  tages like: `<foo/>`
+    EmptyTag,
+    ///This tag just has text and nothing else in it
+    ContentTag,
+    AuxUnknown,
+    AuxOpenAttribOpen,
+    AuxOpenAttribClose,
+    AuxComment,
+}
+impl XmlTokenKind {
+    pub fn is_emptytag(&self) -> bool {
+        if let Self::EmptyTag = self {
+            true
+        } else {
+            false
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -34,7 +53,7 @@ impl XmlToken {
 impl Default for XmlToken {
     fn default() -> XmlToken {
         XmlToken {
-            token_kind: XmlTokenKind::Unknown,
+            token_kind: XmlTokenKind::AuxUnknown,
             content: String::new(),
             attribs: HashMap::new(),
         }
@@ -56,32 +75,31 @@ impl XmlLexer {
 
     ///tokenizes raw  xml text with FSM logic
     pub fn lex(&mut self, src: &str) -> Result<(), XMLErrorKind> {
-        use XmlTokenKind::*;
-        let mut state = Unknown;
+        let mut state = XmlTokenKind::AuxUnknown;
         let mut accum = String::new();
         let mut current_key = String::new();
 
         let mut char_iter = src.chars().peekable();
         while let Some(c) = char_iter.next() {
             match state {
-                Unknown => {
+                XmlTokenKind::AuxUnknown => {
                     if c == '<' {
-                        state = Open;
+                        state = XmlTokenKind::OpenTag;
                     }
                 }
-                Open => {
+                XmlTokenKind::OpenTag => {
                     if c == '>' {
-                        state = Inner;
-                        self.push_token(Open, &mut accum);
+                        state = XmlTokenKind::ContentTag;
+                        self.push_token(XmlTokenKind::OpenTag, &mut accum);
                     } else if let ('/', Some('>')) = (c, char_iter.peek()) {
-                        state = Inner;
+                        state = XmlTokenKind::ContentTag;
                         char_iter.next();
-                        self.push_token(OpenClose, &mut accum);
+                        self.push_token(XmlTokenKind::EmptyTag, &mut accum);
                     } else if let (' ', Some(lookahead)) = (c, char_iter.peek()) {
                         if lookahead.is_alphabetic() {
-                            state = XmlTokenKind::OpenAttribOpen;
+                            state = XmlTokenKind::AuxOpenAttribOpen;
                             //label token as "open" by default
-                            self.push_token(Open, &mut accum);
+                            self.push_token(XmlTokenKind::OpenTag, &mut accum);
                         }
                     } else {
                         let adding_first_character = accum.len() == 0;
@@ -94,12 +112,12 @@ impl XmlLexer {
                         }
                     }
                 }
-                OpenAttribOpen => {
+                XmlTokenKind::AuxOpenAttribOpen => {
                     if c == '=' {
                         current_key = accum.clone();
                         accum.clear();
                         if let Some('"') = char_iter.peek() {
-                            state = OpenAttribClose;
+                            state = XmlTokenKind::AuxOpenAttribClose;
                             char_iter.next();
                         } else {
                             return Err(XMLErrorKind::TokenizerErr(
@@ -107,19 +125,19 @@ impl XmlLexer {
                             ));
                         }
                     } else if c == '>' {
-                        state = Inner;
+                        state = XmlTokenKind::ContentTag;
                     } else if let ('/', Some('>')) = (c, char_iter.peek()) {
-                        state = Inner;
+                        state = XmlTokenKind::ContentTag;
                         char_iter.next();
 
                         //make sure existing open token is flagged as "openclose"
                         let open_token = &mut self.tokens.last_mut().unwrap().as_mut().unwrap();
-                        open_token.token_kind = OpenClose;
+                        open_token.token_kind = XmlTokenKind::EmptyTag;
                     } else {
                         accum.push(c);
                     }
                 }
-                OpenAttribClose => {
+                XmlTokenKind::AuxOpenAttribClose => {
                     if c == '\"' {
                         let open_token = &mut self.tokens.last_mut().unwrap().as_mut().unwrap();
                         open_token
@@ -127,41 +145,41 @@ impl XmlLexer {
                             .insert(current_key.clone(), accum.clone());
                         accum.clear();
 
-                        state = XmlTokenKind::OpenAttribOpen;
+                        state = XmlTokenKind::AuxOpenAttribOpen;
                     } else {
                         accum.push(c);
                     }
                 }
-                Close => {
+                XmlTokenKind::CloseTag => {
                     if c == '>' {
-                        state = Inner;
-                        self.push_token(Close, &mut accum);
+                        state = XmlTokenKind::ContentTag;
+                        self.push_token(XmlTokenKind::CloseTag, &mut accum);
                     } else {
                         accum.push(c);
                     }
                 }
-                Inner => {
+                XmlTokenKind::ContentTag => {
                     if c == '<' {
                         let peek = char_iter.peek();
                         if let Some('/') = peek {
                             char_iter.next();
-                            state = Close;
+                            state = XmlTokenKind::CloseTag;
                         } else if let Some('!') = peek {
                             char_iter.next();
-                            state = Comment;
+                            state = XmlTokenKind::AuxComment;
                         } else {
-                            state = Open;
+                            state = XmlTokenKind::OpenTag;
                         }
-                        self.push_token(Inner, &mut accum);
+                        self.push_token(XmlTokenKind::ContentTag, &mut accum);
                     } else {
                         accum.push(c);
                     }
                 }
-                Comment => {
+                XmlTokenKind::AuxComment => {
                     if c == '-' {
                         let peek = char_iter.peek();
                         if let Some('>') = peek {
-                            state = Inner;
+                            state = XmlTokenKind::ContentTag;
                             char_iter.next();
                         }
                     }
@@ -187,28 +205,28 @@ impl XmlLexer {
         for tok in self.tokens.iter() {
             match &tok {
                 Some(XmlToken {
-                    token_kind: XmlTokenKind::Open,
+                    token_kind: XmlTokenKind::OpenTag,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Open Content=\'{}\'", txt);
                 }
                 Some(XmlToken {
-                    token_kind: XmlTokenKind::Inner,
+                    token_kind: XmlTokenKind::ContentTag,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Inner Content=\'{}\'", txt.trim());
                 }
                 Some(XmlToken {
-                    token_kind: XmlTokenKind::Close,
+                    token_kind: XmlTokenKind::CloseTag,
                     content: txt,
                     ..
                 }) => {
                     println!("kind=Close Content=\'{}\'", txt);
                 }
                 Some(XmlToken {
-                    token_kind: XmlTokenKind::OpenClose,
+                    token_kind: XmlTokenKind::EmptyTag,
                     content: txt,
                     ..
                 }) => {
