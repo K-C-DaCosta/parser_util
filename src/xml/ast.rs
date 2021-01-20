@@ -1,7 +1,7 @@
 use super::lexer::{XmlLexer, XmlToken, XmlTokenKind};
 use super::XMLErrorKind;
 use sandboxed_collections::naryforest::{Pointer, NULL, *};
-use std::{clone, ops};
+use std::ops;
 
 /// Can correctly parse  only  a subset of XML grammar *only*.\
 /// I repeat, this code  cannot parse the entire XML grammar. The parser was intented to parse xml that stores raw data.\
@@ -101,7 +101,7 @@ impl XmlAst {
         other_node: Pointer,
     ) -> Pointer {
         let cloned_other_node_ptr = self.clone_node(other_tree, other_node);
-        
+
         if other_parent != NULL {
             self.ast.add_child(other_parent, cloned_other_node_ptr);
         }
@@ -249,7 +249,7 @@ impl XmlAst {
     /// finds first occurrence of tag matching "content"
     /// returns !0  if search fails
     pub fn search(&self, content: &str, node_ptr: u32) -> Option<u32> {
-        if node_ptr == !0 {
+        if node_ptr == NULL {
             return None;
         }
         if self.ast[node_ptr].data.as_ref().unwrap().content == content {
