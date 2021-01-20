@@ -1,6 +1,7 @@
 use super::lexer::{XmlLexer, XmlToken, XmlTokenKind};
 use super::XMLErrorKind;
-use sandboxed_collections::naryforest::*;
+use sandboxed_collections::naryforest::{Pointer, NULL, *};
+use std::{clone, ops};
 
 /// Can correctly parse  only  a subset of XML grammar *only*.\
 /// I repeat, this code  cannot parse the entire XML grammar. The parser was intented to parse xml that stores raw data.\
@@ -70,15 +71,13 @@ impl XmlParser {
 
         Ok(())
     }
-    
-    /// # Description 
+
+    /// # Description
     /// returns the ast of the xml
     /// # Comments
     /// This function lets you drop the lexer now that its not needed
-    pub fn into_ast(self)->XmlAst {
-        XmlAst{
-            ast:self.ast
-        }
+    pub fn into_ast(self) -> XmlAst {
+        XmlAst { ast: self.ast }
     }
 }
 #[derive(Clone)]
@@ -87,6 +86,48 @@ pub struct XmlAst {
 }
 
 impl XmlAst {
+    /// # Description
+    /// Clones `tree` into `Self`'s memory space
+    /// # Returns
+    /// A pointer to the root of the copied `tree` in `Self`'s memory
+    pub fn clone_tree(&mut self, tree: &XmlAst) -> Pointer {
+        self.clone_tree_helper(tree, NULL, tree.ast.root_list[0])
+    }
+
+    fn clone_tree_helper(
+        &mut self,
+        other_tree: &XmlAst,
+        other_parent: Pointer,
+        other_node: Pointer,
+    ) -> Pointer {
+        let cloned_other_node_ptr = self.clone_node(other_tree, other_node);
+        
+        if other_parent != NULL {
+            self.ast.add_child(other_parent, cloned_other_node_ptr);
+        }
+
+        for &other_node_child_ptr in other_tree[other_node].children.iter() {
+            let cloned_other_node_child_ptr = self.clone_node(other_tree, other_node_child_ptr);
+            self.ast
+                .add_child(cloned_other_node_ptr, cloned_other_node_child_ptr);
+            self.clone_tree_helper(
+                other_tree,
+                cloned_other_node_ptr,
+                cloned_other_node_child_ptr,
+            );
+        }
+        cloned_other_node_ptr
+    }
+    /// # Description
+    /// Clones a `other_node` residing in `other_tree` and puts it in
+    /// `Self`'s memory
+    /// # Returns
+    /// The address to the cloned node(cloned node is now in `Self`)
+    fn clone_node(&mut self, other_tree: &XmlAst, other_node: Pointer) -> Pointer {
+        let other_node = &other_tree[other_node];
+        self.ast.allocate(other_node.data.as_ref().unwrap().clone())
+    }
+
     pub fn print_tree(&self) {
         let mut char_stack = String::new();
         self.print_tree_helper(self.ast.root_list[0], &mut char_stack, ".");
@@ -236,5 +277,18 @@ impl XmlAst {
             .iter()
             .map(move |&ptr| self.ast[ptr].data.as_ref())
             .enumerate()
+    }
+}
+
+impl ops::Index<Pointer> for XmlAst {
+    type Output = NaryNode<XmlToken>;
+    fn index(&self, index: Pointer) -> &Self::Output {
+        &self.ast[index]
+    }
+}
+
+impl ops::IndexMut<Pointer> for XmlAst {
+    fn index_mut(&mut self, index: Pointer) -> &mut Self::Output {
+        &mut self.ast[index]
     }
 }
