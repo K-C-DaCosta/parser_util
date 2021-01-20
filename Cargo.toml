@@ -7,4 +7,4 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sandboxed_collections = {git="https://github.com/K-C-DaCosta/sandboxed_collections" , rev="06d09a410cc2502c71fd3ff3e2ef73b19594027f" }
+sandboxed_collections = {git="https://github.com/K-C-DaCosta/sandboxed_collections"  }
