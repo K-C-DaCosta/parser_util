@@ -15,6 +15,7 @@ pub enum XmlTokenKind {
     Comment,
 }
 
+#[derive(Clone)]
 pub struct XmlToken {
     pub token_kind: XmlTokenKind,
     pub content: String,

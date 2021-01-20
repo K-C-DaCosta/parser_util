@@ -1,19 +1,19 @@
-use sandboxed_collections::naryforest::*;
 use super::lexer::{XmlLexer, XmlToken, XmlTokenKind};
 use super::XMLErrorKind;
+use sandboxed_collections::naryforest::*;
 
 /// Can correctly parse  only  a subset of XML grammar *only*.\
 /// I repeat, this code  cannot parse the entire XML grammar. The parser was intented to parse xml that stores raw data.\
 /// All the `<!DOCTYPE .. >`, `<!ENTITY ..>` stuff has been cut out of the grammar in this parser \
 /// Comments should still work though.
-pub struct XmlAst {
+pub struct XmlParser {
     pub lexer: XmlLexer,
     pub ast: NaryForest<XmlToken>,
 }
 
-impl XmlAst {
-    pub fn new() -> XmlAst {
-        XmlAst {
+impl XmlParser {
+    pub fn new() -> XmlParser {
+        XmlParser {
             lexer: XmlLexer::new(),
             ast: NaryForest::new(),
         }
@@ -70,7 +70,23 @@ impl XmlAst {
 
         Ok(())
     }
+    
+    /// # Description 
+    /// returns the ast of the xml
+    /// # Comments
+    /// This function lets you drop the lexer now that its not needed
+    pub fn into_ast(self)->XmlAst {
+        XmlAst{
+            ast:self.ast
+        }
+    }
+}
+#[derive(Clone)]
+pub struct XmlAst {
+    pub ast: NaryForest<XmlToken>,
+}
 
+impl XmlAst {
     pub fn print_tree(&self) {
         let mut char_stack = String::new();
         self.print_tree_helper(self.ast.root_list[0], &mut char_stack, ".");
