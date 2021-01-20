@@ -100,22 +100,19 @@ impl XmlAst {
         other_parent: Pointer,
         other_node: Pointer,
     ) -> Pointer {
+        if other_node == NULL {
+            return NULL;
+        }
         let cloned_other_node_ptr = self.clone_node(other_tree, other_node);
-
+        
         if other_parent != NULL {
             self.ast.add_child(other_parent, cloned_other_node_ptr);
         }
 
         for &other_node_child_ptr in other_tree[other_node].children.iter() {
-            let cloned_other_node_child_ptr = self.clone_node(other_tree, other_node_child_ptr);
-            self.ast
-                .add_child(cloned_other_node_ptr, cloned_other_node_child_ptr);
-            self.clone_tree_helper(
-                other_tree,
-                cloned_other_node_ptr,
-                cloned_other_node_child_ptr,
-            );
+            self.clone_tree_helper(other_tree, cloned_other_node_ptr, other_node_child_ptr);
         }
+
         cloned_other_node_ptr
     }
     /// # Description
@@ -125,7 +122,9 @@ impl XmlAst {
     /// The address to the cloned node(cloned node is now in `Self`)
     fn clone_node(&mut self, other_tree: &XmlAst, other_node: Pointer) -> Pointer {
         let other_node = &other_tree[other_node];
-        self.ast.allocate(other_node.data.as_ref().unwrap().clone())
+        let duplicated_token = other_node.data.as_ref().expect("as_ref fucked up").clone(); 
+        self.ast
+            .allocate(duplicated_token)
     }
 
     pub fn print_tree(&self) {
@@ -244,39 +243,6 @@ impl XmlAst {
             },
             None => (),
         }
-    }
-
-    /// finds first occurrence of tag matching "content"
-    /// returns !0  if search fails
-    pub fn search(&self, content: &str, node_ptr: u32) -> Option<u32> {
-        if node_ptr == NULL {
-            return None;
-        }
-        if self.ast[node_ptr].data.as_ref().unwrap().content == content {
-            Some(node_ptr)
-        } else {
-            for &child_ptr in self.ast[node_ptr].children.iter() {
-                let result = self.search(content, child_ptr);
-                if result.is_some() {
-                    return result;
-                }
-            }
-            None
-        }
-    }
-
-    /// Returns an iterator that walks through child tokens in xml ast
-    pub fn get_child_tokens(
-        &self,
-        node_ptr: u32,
-    ) -> impl Iterator<Item = (usize, Option<&XmlToken>)> {
-        //without get_child_tokens(...) I would have to do something like this EVERY time i wanted to iterate through
-        //the children of a particular node
-        self.ast[node_ptr]
-            .children
-            .iter()
-            .map(move |&ptr| self.ast[ptr].data.as_ref())
-            .enumerate()
     }
 }
 

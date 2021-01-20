@@ -1,2 +1,5 @@
 /target
+/dump/[!.][a-zA-Z0-9]*
+
+
 Cargo.lock
