@@ -96,6 +96,28 @@ pub struct XmlAst {
 
 impl XmlAst {
     /// # Description
+    /// Searches tree by attribute
+    pub fn search_by_attribute(&self, root: u32, attr_key: &str, attr_val: &str) -> Option<Pointer> {
+        self.ast.search(root, move |node| {
+            node.data
+                .as_ref()
+                .unwrap()
+                .attribs
+                .get(attr_key)
+                .map(|val| val.as_str().trim() == attr_val)
+                .unwrap_or_default()
+        })
+    }
+
+    /// # Description
+    /// Searches tree by content
+    pub fn search_by_content(&self, root: u32, val: &str) -> Option<Pointer> {
+        self.ast.search(root, move |node| {
+            node.data.as_ref().unwrap().content.as_str() == val
+        })
+    }
+    
+    /// # Description
     /// Clones `tree` into `Self`'s memory space
     /// # Returns
     /// A pointer to the root of the copied `tree` in `Self`'s memory
