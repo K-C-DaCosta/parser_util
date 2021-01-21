@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 sandboxed_collections = {git="https://github.com/K-C-DaCosta/sandboxed_collections"  }
+regex ="*"

@@ -6,10 +6,19 @@ use parser_util::{
 };
 use std::{fs, path::Path};
 
+use regex::*; 
+
 fn main() {
 
-    let asd_template = load_and_parse("../blackbot/resources/xml/thread_thumbnail.xml");
-    xml_clone_test()
+    // let asd_template = load_and_parse("../blackbot/resources/xml/thread_thumbnail.xml");
+    // xml_clone_test()
+
+    let regex = Regex::new("^.*/[^{}/]\\.[^{}/]*[^{}/]$").unwrap();
+    if regex.is_match("http://localhost:8080/clips/aasdasd.webm"){
+        println!("matches");
+    }else{
+        println!("doesnt match");
+    }
 }
 
 pub fn load_and_parse<P: AsRef<Path>>(p: P) -> XmlAst {

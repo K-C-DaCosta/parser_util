@@ -95,6 +95,7 @@ pub struct XmlAst {
 }
 
 impl XmlAst {
+    
     /// # Description
     /// Searches tree by attribute
     pub fn search_by_attribute(&self, root: u32, attr_key: &str, attr_val: &str) -> Option<Pointer> {
@@ -116,7 +117,7 @@ impl XmlAst {
             node.data.as_ref().unwrap().content.as_str() == val
         })
     }
-    
+
     /// # Description
     /// Clones `tree` into `Self`'s memory space
     /// # Returns
