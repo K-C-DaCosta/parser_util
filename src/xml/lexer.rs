@@ -9,7 +9,7 @@ use std::collections::HashMap;
 /// - `ContentTag` - raw text
 /// # Comments
 /// The rest of the `TokenKinds` are for states in the lexer
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone,PartialEq)]
 pub enum XmlTokenKind {
     ///This token is for  tages like: `<foo>`
     OpenTag,

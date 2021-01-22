@@ -95,26 +95,46 @@ pub struct XmlAst {
 }
 
 impl XmlAst {
-    
     /// # Description
     /// Searches tree by attribute
-    pub fn search_by_attribute(&self, root: u32, attr_key: &str, attr_val: &str) -> Option<Pointer> {
+    pub fn search_by_attribute(
+        &self,
+        root: u32,
+        attr_key: &str,
+        attr_val: &str,
+    ) -> Option<Pointer> {
         self.ast.search(root, move |node| {
             node.data
                 .as_ref()
-                .unwrap()
-                .attribs
-                .get(attr_key)
-                .map(|val| val.as_str().trim() == attr_val)
+                .map(|tok| {
+                    tok.attribs
+                        .get(attr_key)
+                        .map(|val| val.as_str().trim() == attr_val)
+                })
+                .flatten()
                 .unwrap_or_default()
         })
     }
 
     /// # Description
     /// Searches tree by content
-    pub fn search_by_content(&self, root: u32, val: &str) -> Option<Pointer> {
+    pub fn search_by_tag(&self, root: u32, val: &str) -> Option<Pointer> {
         self.ast.search(root, move |node| {
-            node.data.as_ref().unwrap().content.as_str() == val
+            node.data
+                .as_ref()
+                .map(|tok| tok.content.as_str() == val)
+                .unwrap_or_default()
+        })
+    }
+
+    /// # Description
+    /// Searches tree by token type
+    pub fn search_by_token_type(&self, root: u32, kind: XmlTokenKind) -> Option<Pointer> {
+        self.ast.search(root, move |node| {
+            node.data
+                .as_ref()
+                .map(|tok| tok.token_kind == kind)
+                .unwrap_or_default()
         })
     }
 

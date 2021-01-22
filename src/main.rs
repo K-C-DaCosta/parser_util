@@ -13,11 +13,11 @@ fn main() {
     // let asd_template = load_and_parse("../blackbot/resources/xml/thread_thumbnail.xml");
     // xml_clone_test()
 
-    let regex = Regex::new("^.*/[^{}/]\\.[^{}/]*[^{}/]$").unwrap();
-    if regex.is_match("http://localhost:8080/clips/aasdasd.webm"){
-        println!("matches");
+    let regex = Regex::new("[^{}/]*/?[a-zA-Z0-9]+\\.[^{}/]+").unwrap();
+    if regex.is_match("a/dasdasdsa/aasdsd/asdasd/asd/asd/a/sd/asd/asdaw.a"){
+        println!("Yay matches :)");
     }else{
-        println!("doesnt match");
+        println!("doesnt match :( ");
     }
 }
 
