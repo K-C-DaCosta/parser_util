@@ -38,17 +38,16 @@ impl XmlTokenKind {
 #[derive(Clone)]
 pub struct XmlToken {
     pub token_kind: XmlTokenKind,
-    pub content: ArrayString<[u8; 256]>,
-    pub attribs: ArrayVec<[(String, String); 16]>,
+    pub content: String,
+    pub attribs: Vec<(String, String)>,
 }
 
 impl XmlToken {
     pub fn new(token_kind: XmlTokenKind, content: String) -> XmlToken {
         XmlToken {
             token_kind,
-            content: ArrayString::from(&content)
-                .unwrap_or(ArrayString::from("[OVERFLOW]").unwrap()),
-            attribs: ArrayVec::new(),
+            content,
+            attribs: Vec::new(),
         }
     }
     /// # Description
@@ -76,8 +75,8 @@ impl Default for XmlToken {
     fn default() -> XmlToken {
         XmlToken {
             token_kind: XmlTokenKind::AuxUnknown,
-            content: ArrayString::new(),
-            attribs: ArrayVec::new(),
+            content: String::new(),
+            attribs: Vec::new(),
         }
     }
 }
