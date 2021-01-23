@@ -106,11 +106,7 @@ impl XmlAst {
         self.ast.search(root, move |node| {
             node.data
                 .as_ref()
-                .map(|tok| {
-                    tok.attribs
-                        .get(attr_key)
-                        .map(|val| val.as_str().trim() == attr_val)
-                })
+                .map(|tok| tok.get_attrib(attr_key).map(|val| val == attr_val))
                 .flatten()
                 .unwrap_or_default()
         })

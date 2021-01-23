@@ -6,17 +6,16 @@ use parser_util::{
 };
 use std::{fs, path::Path};
 
-use regex::*; 
+use regex::*;
 
 fn main() {
-
-    // let asd_template = load_and_parse("../blackbot/resources/xml/thread_thumbnail.xml");
-    // xml_clone_test()
+    let asd_template = load_and_parse("../blackbot/resources/xml/thread_thumbnail.xml");
+    xml_clone_test();
 
     let regex = Regex::new("[^{}/]*/?[a-zA-Z0-9]+\\.[^{}/]+").unwrap();
-    if regex.is_match("a/dasdasdsa/aasdsd/asdasd/asd/asd/a/sd/asd/asdaw.a"){
+    if regex.is_match("a/dasdasdsa/aasdsd/asdasd/asd/asd/a/sd/asd/asdaw.a") {
         println!("Yay matches :)");
-    }else{
+    } else {
         println!("doesnt match :( ");
     }
 }
@@ -48,7 +47,8 @@ pub fn xml_clone_test() {
 
     let opt_thread_body_ptr = thread_template.ast.search(0, |node| {
         let token = node.data.as_ref().expect("Option::None found in search");
-        match token.attribs.get("class") {
+        match token.get_attrib("class")
+        {
             Some(val) => {
                 if val.as_str() == "thread_body" {
                     true
@@ -66,4 +66,3 @@ pub fn xml_clone_test() {
 
     println!("{}", thread_template.to_xml_trim());
 }
-

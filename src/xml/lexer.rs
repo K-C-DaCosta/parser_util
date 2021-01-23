@@ -9,7 +9,7 @@ use std::collections::HashMap;
 /// - `ContentTag` - raw text
 /// # Comments
 /// The rest of the `TokenKinds` are for states in the lexer
-#[derive(Copy, Clone,PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum XmlTokenKind {
     ///This token is for  tages like: `<foo>`
     OpenTag,
@@ -38,7 +38,7 @@ impl XmlTokenKind {
 pub struct XmlToken {
     pub token_kind: XmlTokenKind,
     pub content: String,
-    pub attribs: HashMap<String, String>,
+    pub attribs: Vec<(String, String)>,
 }
 
 impl XmlToken {
@@ -46,8 +46,28 @@ impl XmlToken {
         XmlToken {
             token_kind,
             content,
-            attribs: HashMap::new(),
+            attribs: Vec::new(),
         }
+    }
+    /// # Description 
+    /// searches for attribute(key) and returns its associated value
+    /// # Comments 
+    /// - I need these functions now that I've removed hash-table from this struct 
+    /// - I figure a vector would preform much better than a std::collections::HashMap
+    pub fn get_attrib(&self, key: &str) -> Option<&String> {
+        self.attribs
+            .iter()
+            .filter(|(k, _)| k.as_str() == key)
+            .next()
+            .map(|(_, v)| v)
+    }
+
+    pub fn get_attrib_mut(&mut self, attrib: &str) -> Option<&mut String> {
+        self.attribs
+            .iter_mut()
+            .filter(|(k, _)| k.as_str() == attrib)
+            .next()
+            .map(|(_, v)| v)
     }
 }
 impl Default for XmlToken {
@@ -55,7 +75,7 @@ impl Default for XmlToken {
         XmlToken {
             token_kind: XmlTokenKind::AuxUnknown,
             content: String::new(),
-            attribs: HashMap::new(),
+            attribs: Vec::new(),
         }
     }
 }
@@ -142,7 +162,7 @@ impl XmlLexer {
                         let open_token = &mut self.tokens.last_mut().unwrap().as_mut().unwrap();
                         open_token
                             .attribs
-                            .insert(current_key.clone(), accum.clone());
+                            .push((current_key.clone(), accum.clone()));
                         accum.clear();
 
                         state = XmlTokenKind::AuxOpenAttribOpen;
