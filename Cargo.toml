@@ -11,6 +11,7 @@ extras = ["regex"]
 
 [dependencies]
 sandboxed_collections = {git="https://github.com/K-C-DaCosta/sandboxed_collections"  }
+arrayvec= "*"
 regex = { version="*", optional=true }
 
 

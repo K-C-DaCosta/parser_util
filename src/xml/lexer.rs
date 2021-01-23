@@ -1,6 +1,7 @@
-use super::XMLErrorKind;
-use std::collections::HashMap;
+use std::array;
 
+use super::XMLErrorKind;
+use arrayvec::{ArrayString, ArrayVec};
 /// # Description
 /// A token is either:
 /// - `OpenTag`
@@ -37,22 +38,23 @@ impl XmlTokenKind {
 #[derive(Clone)]
 pub struct XmlToken {
     pub token_kind: XmlTokenKind,
-    pub content: String,
-    pub attribs: Vec<(String, String)>,
+    pub content: ArrayString<[u8; 256]>,
+    pub attribs: ArrayVec<[(String, String); 16]>,
 }
 
 impl XmlToken {
     pub fn new(token_kind: XmlTokenKind, content: String) -> XmlToken {
         XmlToken {
             token_kind,
-            content,
-            attribs: Vec::new(),
+            content: ArrayString::from(&content)
+                .unwrap_or(ArrayString::from("[OVERFLOW]").unwrap()),
+            attribs: ArrayVec::new(),
         }
     }
-    /// # Description 
+    /// # Description
     /// searches for attribute(key) and returns its associated value
-    /// # Comments 
-    /// - I need these functions now that I've removed hash-table from this struct 
+    /// # Comments
+    /// - I need these functions now that I've removed hash-table from this struct
     /// - I figure a vector would preform much better than a std::collections::HashMap
     pub fn get_attrib(&self, key: &str) -> Option<&String> {
         self.attribs
@@ -74,8 +76,8 @@ impl Default for XmlToken {
     fn default() -> XmlToken {
         XmlToken {
             token_kind: XmlTokenKind::AuxUnknown,
-            content: String::new(),
-            attribs: Vec::new(),
+            content: ArrayString::new(),
+            attribs: ArrayVec::new(),
         }
     }
 }
