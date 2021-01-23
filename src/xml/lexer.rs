@@ -1,7 +1,6 @@
 use std::array;
 
 use super::XMLErrorKind;
-use arrayvec::{ArrayString, ArrayVec};
 /// # Description
 /// A token is either:
 /// - `OpenTag`
