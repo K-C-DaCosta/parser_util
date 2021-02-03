@@ -65,7 +65,7 @@ impl XmlToken {
     pub fn get_attrib_mut(&mut self, attrib: &str) -> Option<&mut String> {
         self.attribs
             .iter_mut()
-            .filter(|(k, _)| k.as_str() == attrib)
+            .filter(|(k, _)| k.as_str().trim() == attrib)
             .next()
             .map(|(_, v)| v)
     }
